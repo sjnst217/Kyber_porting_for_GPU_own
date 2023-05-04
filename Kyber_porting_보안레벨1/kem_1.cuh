@@ -1,5 +1,5 @@
 #pragma once
-#include "params.cuh"
+#include "params_1.cuh"
 #include <stdint.h>
 
 #define PQCLEAN_KYBER512_CLEAN_CRYPTO_SECRETKEYBYTES  KYBER_SECRETKEYBYTES

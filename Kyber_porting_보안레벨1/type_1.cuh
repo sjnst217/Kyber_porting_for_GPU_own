@@ -1,8 +1,8 @@
 #pragma once
 
-#include "params.cuh"
-#include "kem.cuh"
-#include "fips202.cuh"
+#include "params_1.cuh"
+#include "kem_1.cuh"
+#include "fips202_1.cuh"
 
 typedef struct {
     int16_t coeffs[KYBER_N];

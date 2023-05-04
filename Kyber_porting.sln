@@ -3,7 +3,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.32602.291
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Kyber_porting", "Kyber_porting\Kyber_porting.vcxproj", "{3BCB2402-1076-4BAC-9D6E-CAFDC4EE9DFF}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Kyber_porting_보안레벨3", "Kyber_porting_보안레벨3\Kyber_porting_보안레벨3.vcxproj", "{25269140-A725-4C49-8A90-0E95460896AB}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Kyber_porting_보안레벨1", "Kyber_porting_보안레벨1\Kyber_porting.vcxproj", "{3BCB2402-1076-4BAC-9D6E-CAFDC4EE9DFF}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -11,6 +13,10 @@ Global
 		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{25269140-A725-4C49-8A90-0E95460896AB}.Debug|x64.ActiveCfg = Debug|x64
+		{25269140-A725-4C49-8A90-0E95460896AB}.Debug|x64.Build.0 = Debug|x64
+		{25269140-A725-4C49-8A90-0E95460896AB}.Release|x64.ActiveCfg = Release|x64
+		{25269140-A725-4C49-8A90-0E95460896AB}.Release|x64.Build.0 = Release|x64
 		{3BCB2402-1076-4BAC-9D6E-CAFDC4EE9DFF}.Debug|x64.ActiveCfg = Debug|x64
 		{3BCB2402-1076-4BAC-9D6E-CAFDC4EE9DFF}.Debug|x64.Build.0 = Debug|x64
 		{3BCB2402-1076-4BAC-9D6E-CAFDC4EE9DFF}.Release|x64.ActiveCfg = Release|x64

@@ -11,8 +11,8 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{3BCB2402-1076-4BAC-9D6E-CAFDC4EE9DFF}</ProjectGuid>
-    <RootNamespace>Kyber_porting</RootNamespace>
+    <ProjectGuid>{25269140-A725-4C49-8A90-0E95460896AB}</ProjectGuid>
+    <RootNamespace>Kyber_porting_보안레벨3</RootNamespace>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
@@ -77,13 +77,13 @@
     </CudaCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <CudaCompile Include="Kyber_porting_genkey.cu" />
+    <CudaCompile Include="Kyber_porting_security_level3.cu" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="fips202.cuh" />
-    <ClInclude Include="kem.cuh" />
-    <ClInclude Include="params.cuh" />
-    <ClInclude Include="type.cuh" />
+    <ClInclude Include="fips202_3.cuh" />
+    <ClInclude Include="kem_3.cuh" />
+    <ClInclude Include="params_3.cuh" />
+    <ClInclude Include="type_3.cuh" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
