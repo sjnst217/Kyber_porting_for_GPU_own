@@ -14,5 +14,6 @@ typedef struct {
 
 typedef shake128ctx xof_state;
 
+#define     N_TIMES 1000    //동시에 동작하는 Kyber의 개수
 //#define BLOCKSIZE  20
 //#define THREADSIZE  2

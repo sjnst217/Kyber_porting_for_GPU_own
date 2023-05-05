@@ -1233,6 +1233,9 @@ void test_Kyber(uint64_t blocksize, uint64_t threadsize)
     uint8_t* ss = NULL;
     uint8_t* ss2 = NULL;
 
+    cudaEvent_t start, stop;
+    float elapsed_time_ms = 0.0f;
+
     pk = (uint8_t*)malloc(PQCLEAN_KYBER512_CLEAN_CRYPTO_PUBLICKEYBYTES * blocksize * threadsize); //PQCLEAN_KYBER512_CLEAN_CRYPTO_PUBLICKEYBYTES -> (2 * 384 + 32) * blocksize * threadsize
     sk = (uint8_t*)malloc(PQCLEAN_KYBER512_CLEAN_CRYPTO_SECRETKEYBYTES * blocksize * threadsize); //PQCLEAN_KYBER512_CLEAN_CRYPTO_SECRETKEYBYTES -> ((2 * 384) + (2 * 384 + 32) + (2 * 32)) * blocksize * threadsize
     ct = (uint8_t*)malloc(KYBER_CIPHERTEXTBYTES * blocksize * threadsize);
@@ -1251,10 +1254,36 @@ void test_Kyber(uint64_t blocksize, uint64_t threadsize)
     cudaMalloc((void**)&GPU_ss, 32 * blocksize * threadsize);
     cudaMalloc((void**)&GPU_ss2, 32 * blocksize * threadsize);
 
+    printf("\nStart...\n");
+
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
+    cudaEventRecord(start, 0);
+
     Kyber << <blocksize, threadsize >> > (GPU_pk, GPU_sk, GPU_ct, GPU_ss, GPU_ss2);
+
+    printf("%d\n", N_TIMES);
+
+    cudaEventRecord(stop, 0);
+    cudaDeviceSynchronize();
+    cudaEventSynchronize(start);
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&elapsed_time_ms, start, stop);
+
+    elapsed_time_ms /= N_TIMES;    //N_TIMES 동작했으니깐 나누어주고
+    elapsed_time_ms = (1000 / elapsed_time_ms) * blocksize * threadsize;
+    printf("Grid : %ld, Block : %ld, Performance : %4.2f Kyber/s\n", blocksize, threadsize, elapsed_time_ms);
 
     cudaMemcpy(ss, GPU_ss, 32 * blocksize * threadsize, cudaMemcpyDeviceToHost);
     cudaMemcpy(ss2, GPU_ss2, 32 * blocksize * threadsize, cudaMemcpyDeviceToHost);
+
+    if (!memcmp(ss, ss2, 32 * blocksize * threadsize))
+        printf("\n\nSuccess!\n\n");
+    else
+        printf("\n\nFail\n\n");
+
+    getchar();
+    getchar();
 
     //printf("ss0: = \n");
     //for (int i = 0; i < 32 * blocksize * threadsize; i++) {
@@ -1268,35 +1297,32 @@ void test_Kyber(uint64_t blocksize, uint64_t threadsize)
     //}
     //printf("\n\n");
 
-    //printf("ss0: = \n");
-    //for (int i = 0; i < 32 * blocksize * threadsize; i++) {
-    //    printf("%02X ", ss2[i]);
+    printf("ss2_0: = \n");
+    for (int i = 0; i < 32 * blocksize * threadsize; i++) {
+        printf("%02X ", ss2[i]);
 
-    //    if ((i + 1) % 32 == 0)
-    //    {
-    //        printf("\nss2_%d: = \n", (i + 1) / 32);
-    //        printf("\n");
-    //    }
-    //}
+        if ((i + 1) % 32 == 0)
+        {
+            printf("\nss2_%d: = \n", (i + 1) / 32);
+            printf("\n");
+        }
+    }
 
-    if (memcpy(ss, ss2, 32 * blocksize * threadsize))
-        printf("\n\nSuccess!\n\n");
-
-    free(pk);
-    free(sk);
-    free(ct);
-    free(ss);
-    free(ss2);
     cudaFree(GPU_pk);
     cudaFree(GPU_sk);
     cudaFree(GPU_ct);
     cudaFree(GPU_ss);
     cudaFree(GPU_ss2);
+    free(pk);
+    free(sk);
+    free(ct);
+    free(ss);
+    free(ss2);
 }
 
 int main()
 {
-    test_Kyber(20, 20);
+    test_Kyber(256, 256);
 
     return 0;
 }
