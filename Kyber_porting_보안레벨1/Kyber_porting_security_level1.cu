@@ -9,7 +9,6 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
-#include <vcruntime.h>
 
 #define hash_h(OUT, IN, INBYTES) sha3_256(OUT, IN, INBYTES)
 #define hash_g(OUT, IN, INBYTES) sha3_512(OUT, IN, INBYTES)
@@ -32,11 +31,6 @@ __device__ static void randombytes_win32_randombytes(uint8_t* buf, const size_t 
         buf++;
     }
 }
-//__device__ int randombytes(uint8_t* output, size_t n) {
-//    void* buf = (void*)output;
-//    return randombytes_win32_randombytes(buf, n);
-//}
-
 __device__ void PQCLEAN_KYBER512_CLEAN_poly_frommsg(poly* r, const uint8_t msg[KYBER_INDCPA_MSGBYTES]) {
     size_t i, j;
     int16_t mask;
@@ -63,7 +57,6 @@ __device__ static const uint64_t KeccakF_RoundConstants[NROUNDS] = {
     0x8000000080008081ULL, 0x8000000000008080ULL,
     0x0000000080000001ULL, 0x8000000080008008ULL
 };
-
 __device__ const int16_t PQCLEAN_KYBER512_CLEAN_zetas[128] = {
     -1044,  -758,  -359, -1517,  1493,  1422,   287,   202,
         -171,   622,  1577,   182,   962, -1202, -1474,  1468,
@@ -83,13 +76,11 @@ __device__ const int16_t PQCLEAN_KYBER512_CLEAN_zetas[128] = {
         -108,  -308,   996,   991,   958, -1460,  1522,  1628
 };
 
-
 __device__ static void store64(uint8_t* x, uint64_t u) {
     for (size_t i = 0; i < 8; ++i) {
         x[i] = (uint8_t)(u >> 8 * i);
     }
 }
-
 __device__ static uint64_t load64(const uint8_t* x) {
     uint64_t r = 0;
     for (size_t i = 0; i < 8; ++i) {
@@ -98,7 +89,6 @@ __device__ static uint64_t load64(const uint8_t* x) {
 
     return r;
 }
-
 __device__ static uint32_t load24_littleendian(const uint8_t x[3])
 {
     uint32_t r;
@@ -107,7 +97,6 @@ __device__ static uint32_t load24_littleendian(const uint8_t x[3])
     r |= (uint32_t)x[2] << 16;
     return r;
 }
-
 __device__ static uint32_t load32_littleendian(const uint8_t x[4]) {
     uint32_t r;
     r = (uint32_t)x[0];
@@ -115,12 +104,6 @@ __device__ static uint32_t load32_littleendian(const uint8_t x[4]) {
     r |= (uint32_t)x[2] << 16;
     r |= (uint32_t)x[3] << 24;
     return r;
-}
-
-
-__device__ void shake128_ctx_release(shake128ctx* state)
-{
-    free(state->ctx);
 }
 
 __device__ void PQCLEAN_KYBER512_CLEAN_poly_tobytes(uint8_t r[KYBER_POLYBYTES], const poly* a)
@@ -139,7 +122,6 @@ __device__ void PQCLEAN_KYBER512_CLEAN_poly_tobytes(uint8_t r[KYBER_POLYBYTES], 
         r[3 * i + 2] = (uint8_t)(t1 >> 4);
     }
 }
-
 __device__ void PQCLEAN_KYBER512_CLEAN_poly_tomsg(uint8_t msg[KYBER_INDCPA_MSGBYTES], const poly* a) {
     size_t i, j;
     uint16_t t;
@@ -417,8 +399,6 @@ __device__ static void KeccakF1600_StatePermute(uint64_t* state) {
     state[23] = Aso;
     state[24] = Asu;
 }
-
-
 __device__ static void keccak_absorb(uint64_t* s, uint32_t r, const uint8_t* m, size_t mlen, uint8_t p) {
     size_t i;
     uint8_t t[200];
@@ -450,15 +430,16 @@ __device__ static void keccak_absorb(uint64_t* s, uint32_t r, const uint8_t* m, 
         s[i] ^= load64(t + 8 * i);
     }
 }
-
-
+__device__ void shake128_ctx_release(shake128ctx* state)
+{
+    free(state->ctx);
+}
 __device__ void shake128_absorb(shake128ctx* state, const uint8_t* input, size_t inlen)
 {
     state->ctx = (uint64_t*)malloc(PQC_SHAKECTX_BYTES);
 
     keccak_absorb(state->ctx, SHAKE128_RATE, input, inlen, 0x1F);
 }
-
 __device__ static void keccak_squeezeblocks(uint8_t* h, size_t nblocks, uint64_t* s, uint32_t r) {
     while (nblocks > 0) {
         KeccakF1600_StatePermute(s);
@@ -469,8 +450,6 @@ __device__ static void keccak_squeezeblocks(uint8_t* h, size_t nblocks, uint64_t
         nblocks--;
     }
 }
-
-
 __device__ void shake128_squeezeblocks(uint8_t* output, size_t nblocks, shake128ctx* state)
 {
     keccak_squeezeblocks(output, nblocks, state->ctx, SHAKE128_RATE);
@@ -496,7 +475,6 @@ __device__ void PQCLEAN_KYBER512_CLEAN_poly_compress(uint8_t r[KYBER_POLYCOMPRES
         r += 4;
     }
 }
-
 __device__ void PQCLEAN_KYBER512_CLEAN_polyvec_compress(uint8_t r[KYBER_POLYVECCOMPRESSEDBYTES], const polyvec* a) {
     unsigned int i, j, k;
 
@@ -518,7 +496,6 @@ __device__ void PQCLEAN_KYBER512_CLEAN_polyvec_compress(uint8_t r[KYBER_POLYVECC
         }
     }
 }
-
 __device__ void PQCLEAN_KYBER512_CLEAN_polyvec_tobytes(uint8_t r[KYBER_POLYVECBYTES], const polyvec* a)
 {
     unsigned int i;
@@ -526,12 +503,10 @@ __device__ void PQCLEAN_KYBER512_CLEAN_polyvec_tobytes(uint8_t r[KYBER_POLYVECBY
         PQCLEAN_KYBER512_CLEAN_poly_tobytes(r + i * KYBER_POLYBYTES, &a->vec[i]);
     }
 }
-
 __device__ static void pack_sk(uint8_t r[KYBER_INDCPA_SECRETKEYBYTES], polyvec* sk)
 {
     PQCLEAN_KYBER512_CLEAN_polyvec_tobytes(r, sk);
 }
-
 __device__ static void pack_pk(uint8_t r[KYBER_INDCPA_PUBLICKEYBYTES], polyvec* pk, const uint8_t seed[KYBER_SYMBYTES])
 {
     size_t i;
@@ -540,7 +515,6 @@ __device__ static void pack_pk(uint8_t r[KYBER_INDCPA_PUBLICKEYBYTES], polyvec* 
         r[i + KYBER_POLYVECBYTES] = seed[i];
     }
 }
-
 __device__ void PQCLEAN_KYBER512_CLEAN_kyber_shake128_absorb(xof_state* state, const uint8_t seed[KYBER_SYMBYTES], uint8_t x, uint8_t y)
 {
     uint8_t extseed[KYBER_SYMBYTES + 2];
@@ -551,7 +525,6 @@ __device__ void PQCLEAN_KYBER512_CLEAN_kyber_shake128_absorb(xof_state* state, c
 
     shake128_absorb(state, extseed, sizeof(extseed));
 }
-
 __device__ static unsigned int rej_uniform(int16_t* r, unsigned int len, const uint8_t* buf, unsigned int buflen)
 {
     unsigned int ctr, pos;
@@ -573,7 +546,6 @@ __device__ static unsigned int rej_uniform(int16_t* r, unsigned int len, const u
 
     return ctr;
 }
-
 __device__ void PQCLEAN_KYBER512_CLEAN_gen_matrix(polyvec* a, const uint8_t seed[KYBER_SYMBYTES], int transposed) {
     unsigned int ctr, i, j, k;
     unsigned int buflen, off;
@@ -622,7 +594,6 @@ __device__ void sha3_256(uint8_t* output, const uint8_t* input, size_t inlen)
         output[i] = t[i];
     }
 }
-
 __device__ void sha3_512(uint8_t* output, const uint8_t* input, size_t inlen) {
     uint64_t s[25];
     uint8_t t[SHA3_512_RATE];
@@ -637,24 +608,20 @@ __device__ void sha3_512(uint8_t* output, const uint8_t* input, size_t inlen) {
         output[i] = t[i];
     }
 }
-
 __device__ void shake256_absorb(shake256ctx* state, const uint8_t* input, size_t inlen)
 {
     state->ctx = (uint64_t*)malloc(PQC_SHAKECTX_BYTES);
 
     keccak_absorb(state->ctx, SHAKE256_RATE, input, inlen, 0x1F);
 }
-
 __device__ void shake256_squeezeblocks(uint8_t* output, size_t nblocks, shake256ctx* state)
 {
     keccak_squeezeblocks(output, nblocks, state->ctx, SHAKE256_RATE);
 }
-
 __device__ void shake256_ctx_release(shake256ctx* state)
 {
     free(state->ctx);
 }
-
 __device__ void shake256(uint8_t* output, size_t outlen, const uint8_t* input, size_t inlen)
 {
     size_t nblocks = outlen / SHAKE256_RATE;
@@ -695,12 +662,10 @@ __device__ static void cbd3(poly* r, const uint8_t buf[3 * KYBER_N / 4])
         }
     }
 }
-
 __device__ void PQCLEAN_KYBER512_CLEAN_poly_cbd_eta1(poly* r, const uint8_t buf[KYBER_ETA1 * KYBER_N / 4])
 {
     cbd3(r, buf);
 }
-
 __device__ void PQCLEAN_KYBER512_CLEAN_kyber_shake256_prf(uint8_t* out, size_t outlen, const uint8_t key[KYBER_SYMBYTES], uint8_t nonce) {
     uint8_t extkey[KYBER_SYMBYTES + 1];
 
@@ -709,13 +674,11 @@ __device__ void PQCLEAN_KYBER512_CLEAN_kyber_shake256_prf(uint8_t* out, size_t o
 
     shake256(out, outlen, extkey, sizeof(extkey));
 }
-
 __device__ void PQCLEAN_KYBER512_CLEAN_poly_getnoise_eta1(poly* r, const uint8_t seed[KYBER_SYMBYTES], uint8_t nonce) {
     uint8_t buf[KYBER_ETA1 * KYBER_N / 4];
     prf(buf, sizeof(buf), seed, nonce);
     PQCLEAN_KYBER512_CLEAN_poly_cbd_eta1(r, buf);
 }
-
 __device__ int16_t PQCLEAN_KYBER512_CLEAN_montgomery_reduce(int32_t a)
 {
     int16_t t;
@@ -724,12 +687,10 @@ __device__ int16_t PQCLEAN_KYBER512_CLEAN_montgomery_reduce(int32_t a)
     t = (a - (int32_t)t * KYBER_Q) >> 16;
     return t;
 }
-
 __device__ static int16_t fqmul(int16_t a, int16_t b)
 {
     return PQCLEAN_KYBER512_CLEAN_montgomery_reduce((int32_t)a * b);
 }
-
 __device__ void PQCLEAN_KYBER512_CLEAN_ntt(int16_t r[256])
 {
     unsigned int len, start, j, k;
@@ -747,7 +708,6 @@ __device__ void PQCLEAN_KYBER512_CLEAN_ntt(int16_t r[256])
         }
     }
 }
-
 __device__ int16_t PQCLEAN_KYBER512_CLEAN_barrett_reduce(int16_t a) {
     int16_t t;
     const int16_t v = ((1 << 26) + KYBER_Q / 2) / KYBER_Q;
@@ -756,14 +716,12 @@ __device__ int16_t PQCLEAN_KYBER512_CLEAN_barrett_reduce(int16_t a) {
     t *= KYBER_Q;
     return a - t;
 }
-
 __device__ void PQCLEAN_KYBER512_CLEAN_poly_sub(poly* r, const poly* a, const poly* b) {
     size_t i;
     for (i = 0; i < KYBER_N; i++) {
         r->coeffs[i] = a->coeffs[i] - b->coeffs[i];
     }
 }
-
 
 __device__ void PQCLEAN_KYBER512_CLEAN_poly_reduce(poly* r)
 {
@@ -772,13 +730,11 @@ __device__ void PQCLEAN_KYBER512_CLEAN_poly_reduce(poly* r)
         r->coeffs[i] = PQCLEAN_KYBER512_CLEAN_barrett_reduce(r->coeffs[i]);
     }
 }
-
 __device__ void PQCLEAN_KYBER512_CLEAN_poly_ntt(poly* r)
 {
     PQCLEAN_KYBER512_CLEAN_ntt(r->coeffs);
     PQCLEAN_KYBER512_CLEAN_poly_reduce(r);
 }
-
 __device__ void PQCLEAN_KYBER512_CLEAN_polyvec_ntt(polyvec* r)
 {
     unsigned int i;
@@ -795,7 +751,6 @@ __device__ void PQCLEAN_KYBER512_CLEAN_basemul(int16_t r[2], const int16_t a[2],
     r[1] = fqmul(a[0], b[1]);
     r[1] += fqmul(a[1], b[0]);
 }
-
 __device__ void PQCLEAN_KYBER512_CLEAN_poly_basemul_montgomery(poly* r, const poly* a, const poly* b)
 {
     size_t i;
@@ -804,7 +759,6 @@ __device__ void PQCLEAN_KYBER512_CLEAN_poly_basemul_montgomery(poly* r, const po
         PQCLEAN_KYBER512_CLEAN_basemul(&r->coeffs[4 * i + 2], &a->coeffs[4 * i + 2], &b->coeffs[4 * i + 2], -PQCLEAN_KYBER512_CLEAN_zetas[64 + i]);
     }
 }
-
 __device__ void PQCLEAN_KYBER512_CLEAN_poly_add(poly* r, const poly* a, const poly* b)
 {
     size_t i;
@@ -812,7 +766,6 @@ __device__ void PQCLEAN_KYBER512_CLEAN_poly_add(poly* r, const poly* a, const po
         r->coeffs[i] = a->coeffs[i] + b->coeffs[i];
     }
 }
-
 __device__ void PQCLEAN_KYBER512_CLEAN_polyvec_basemul_acc_montgomery(poly* r, const polyvec* a, const polyvec* b)
 {
     unsigned int i;
@@ -826,7 +779,6 @@ __device__ void PQCLEAN_KYBER512_CLEAN_polyvec_basemul_acc_montgomery(poly* r, c
 
     PQCLEAN_KYBER512_CLEAN_poly_reduce(r);
 }
-
 __device__ void PQCLEAN_KYBER512_CLEAN_poly_tomont(poly* r)
 {
     size_t i;
@@ -835,7 +787,6 @@ __device__ void PQCLEAN_KYBER512_CLEAN_poly_tomont(poly* r)
         r->coeffs[i] = PQCLEAN_KYBER512_CLEAN_montgomery_reduce((int32_t)r->coeffs[i] * f);
     }
 }
-
 __device__ void PQCLEAN_KYBER512_CLEAN_polyvec_add(polyvec* r, const polyvec* a, const polyvec* b)
 {
     unsigned int i;
@@ -843,7 +794,6 @@ __device__ void PQCLEAN_KYBER512_CLEAN_polyvec_add(polyvec* r, const polyvec* a,
         PQCLEAN_KYBER512_CLEAN_poly_add(&r->vec[i], &a->vec[i], &b->vec[i]);
     }
 }
-
 __device__ void PQCLEAN_KYBER512_CLEAN_polyvec_reduce(polyvec* r) {
     unsigned int i;
     for (i = 0; i < KYBER_K; i++) {
@@ -905,7 +855,6 @@ __device__ void PQCLEAN_KYBER512_CLEAN_indcpa_keypair(uint8_t pk[KYBER_INDCPA_PU
     pack_sk(sk, &skpv);                                         //sk 직렬화 -> 즉 바이트 배열로 저장
     pack_pk(pk, &pkpv, publicseed);                             //pk 직렬화 -> 즉 바이트 배열로 저장
 }
-
 __device__ void PQCLEAN_KYBER512_CLEAN_poly_frombytes(poly* r, const uint8_t a[KYBER_POLYBYTES]) {
     size_t i;
     for (i = 0; i < KYBER_N / 2; i++) {
@@ -913,7 +862,6 @@ __device__ void PQCLEAN_KYBER512_CLEAN_poly_frombytes(poly* r, const uint8_t a[K
         r->coeffs[2 * i + 1] = ((a[3 * i + 1] >> 4) | ((uint16_t)a[3 * i + 2] << 4)) & 0xFFF;
     }
 }
-
 __device__ void PQCLEAN_KYBER512_CLEAN_polyvec_frombytes(polyvec* r, const uint8_t a[KYBER_POLYVECBYTES]) {
     unsigned int i;
     for (i = 0; i < KYBER_K; i++) {
@@ -931,7 +879,6 @@ __device__ static void unpack_pk(polyvec* pk, uint8_t seed[KYBER_SYMBYTES], cons
         seed[i] = packedpk[i + KYBER_POLYVECBYTES];
     }
 }
-
 __device__ static void cbd2(poly* r, const uint8_t buf[2 * KYBER_N / 4]) {
     unsigned int i, j;
     uint32_t t, d;
@@ -949,11 +896,9 @@ __device__ static void cbd2(poly* r, const uint8_t buf[2 * KYBER_N / 4]) {
         }
     }
 }
-
 __device__ void PQCLEAN_KYBER512_CLEAN_poly_cbd_eta2(poly* r, const uint8_t buf[KYBER_ETA2 * KYBER_N / 4]) {
     cbd2(r, buf);
 }
-
 __device__ void PQCLEAN_KYBER512_CLEAN_poly_getnoise_eta2(poly* r, const uint8_t seed[KYBER_SYMBYTES], uint8_t nonce) {
     uint8_t buf[KYBER_ETA2 * KYBER_N / 4];
     prf(buf, sizeof(buf), seed, nonce);
@@ -982,11 +927,9 @@ __device__ void PQCLEAN_KYBER512_CLEAN_invntt(int16_t r[256]) {
         r[j] = fqmul(r[j], f);
     }
 }
-
 __device__ void PQCLEAN_KYBER512_CLEAN_poly_invntt_tomont(poly* r) {
     PQCLEAN_KYBER512_CLEAN_invntt(r->coeffs);
 }
-
 __device__ void PQCLEAN_KYBER512_CLEAN_polyvec_invntt_tomont(polyvec* r) {
     unsigned int i;
     for (i = 0; i < KYBER_K; i++) {
@@ -998,7 +941,6 @@ __device__ static void pack_ciphertext(uint8_t r[KYBER_INDCPA_BYTES], polyvec* b
     PQCLEAN_KYBER512_CLEAN_polyvec_compress(r, b);
     PQCLEAN_KYBER512_CLEAN_poly_compress(r + KYBER_POLYVECCOMPRESSEDBYTES, v);
 }
-
 __device__ void PQCLEAN_KYBER512_CLEAN_indcpa_enc(uint8_t* c, const uint8_t m[KYBER_INDCPA_MSGBYTES], const uint8_t pk[KYBER_INDCPA_PUBLICKEYBYTES], const uint8_t coins[KYBER_SYMBYTES])   //알고리즘 4
 {
     unsigned int i;
@@ -1137,7 +1079,6 @@ __device__ static void unpack_ciphertext(polyvec* b, poly* v, const uint8_t c[KY
     PQCLEAN_KYBER512_CLEAN_polyvec_decompress(b, c);
     PQCLEAN_KYBER512_CLEAN_poly_decompress(v, c + KYBER_POLYVECCOMPRESSEDBYTES);
 }
-
 __device__ static void unpack_sk(polyvec* sk, const uint8_t packedsk[KYBER_INDCPA_SECRETKEYBYTES]) {
     PQCLEAN_KYBER512_CLEAN_polyvec_frombytes(sk, packedsk);
 }
@@ -1161,8 +1102,6 @@ __device__ void PQCLEAN_KYBER512_CLEAN_cmov(uint8_t* r, const uint8_t* x, size_t
         r[i] ^= b & (r[i] ^ x[i]);
     }
 }
-
-
 __device__ void PQCLEAN_KYBER512_CLEAN_indcpa_dec(uint8_t m[KYBER_INDCPA_MSGBYTES], const uint8_t c[KYBER_INDCPA_BYTES], const uint8_t sk[KYBER_INDCPA_SECRETKEYBYTES])
 {
     polyvec b, skpv;
@@ -1180,7 +1119,6 @@ __device__ void PQCLEAN_KYBER512_CLEAN_indcpa_dec(uint8_t m[KYBER_INDCPA_MSGBYTE
 
     PQCLEAN_KYBER512_CLEAN_poly_tomsg(m, &mp);
 }
-
 __device__ void PQCLEAN_KYBER512_CLEAN_crypto_kem_dec(uint8_t* ss, const uint8_t* ct, const uint8_t* sk)
 {
     size_t i;
@@ -1214,7 +1152,7 @@ __device__ void PQCLEAN_KYBER512_CLEAN_crypto_kem_dec(uint8_t* ss, const uint8_t
     kdf(ss, kr, 2 * KYBER_SYMBYTES);
 }
 
-__global__ void Kyber(uint8_t* pk, uint8_t* sk, uint8_t* ct, uint8_t* ss, uint8_t* ss2)
+__global__ void GPU_Kyber(uint8_t* pk, uint8_t* sk, uint8_t* ct, uint8_t* ss, uint8_t* ss2)
 {
     int tid;
 
@@ -1260,7 +1198,8 @@ void test_Kyber(uint64_t blocksize, uint64_t threadsize)
     cudaEventCreate(&stop);
     cudaEventRecord(start, 0);
 
-    Kyber << <blocksize, threadsize >> > (GPU_pk, GPU_sk, GPU_ct, GPU_ss, GPU_ss2);
+    for (int i = 0; i < N_TIMES; i++)
+        GPU_Kyber << <blocksize, threadsize >> > (GPU_pk, GPU_sk, GPU_ct, GPU_ss, GPU_ss2);
 
     printf("%d\n", N_TIMES);
 
@@ -1270,7 +1209,7 @@ void test_Kyber(uint64_t blocksize, uint64_t threadsize)
     cudaEventSynchronize(stop);
     cudaEventElapsedTime(&elapsed_time_ms, start, stop);
 
-    elapsed_time_ms /= N_TIMES;    //N_TIMES 동작했으니깐 나누어주고
+    elapsed_time_ms /= N_TIMES;
     elapsed_time_ms = (1000 / elapsed_time_ms) * blocksize * threadsize;
     printf("Grid : %ld, Block : %ld, Performance : %4.2f Kyber/s\n", blocksize, threadsize, elapsed_time_ms);
 
@@ -1285,17 +1224,17 @@ void test_Kyber(uint64_t blocksize, uint64_t threadsize)
     getchar();
     getchar();
 
-    //printf("ss0: = \n");
-    //for (int i = 0; i < 32 * blocksize * threadsize; i++) {
-    //    printf("%02X ", ss[i]);
+    printf("ss_0: = \n");
+    for (int i = 0; i < 32 * blocksize * threadsize; i++) {
+        printf("%02X ", ss[i]);
 
-    //    if ((i + 1) % 32 == 0)
-    //    {
-    //        printf("\nss_%d: = \n", (i + 1)/32);
-    //        printf("\n");
-    //    }
-    //}
-    //printf("\n\n");
+        if ((i + 1) % 32 == 0)
+        {
+            printf("\nss_%d: = \n", (i + 1)/32);
+            printf("\n");
+        }
+    }
+    printf("\n\n");
 
     printf("ss2_0: = \n");
     for (int i = 0; i < 32 * blocksize * threadsize; i++) {
@@ -1322,7 +1261,7 @@ void test_Kyber(uint64_t blocksize, uint64_t threadsize)
 
 int main()
 {
-    test_Kyber(256, 256);
+    test_Kyber(2048, 32);
 
     return 0;
 }
