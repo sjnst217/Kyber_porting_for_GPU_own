@@ -7,6 +7,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Kyber_porting_보안레벨3
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Kyber_porting_보안레벨1", "Kyber_porting_보안레벨1\Kyber_porting.vcxproj", "{3BCB2402-1076-4BAC-9D6E-CAFDC4EE9DFF}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CRYSTALS_KYBER_OPT_TEST", "CRYSTALS_KYBER_OPT_TEST\CRYSTALS_KYBER_OPT_TEST.vcxproj", "{F4CCC1EE-C702-4EB2-AF4F-4C23BA3E8440}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -21,6 +23,10 @@ Global
 		{3BCB2402-1076-4BAC-9D6E-CAFDC4EE9DFF}.Debug|x64.Build.0 = Debug|x64
 		{3BCB2402-1076-4BAC-9D6E-CAFDC4EE9DFF}.Release|x64.ActiveCfg = Release|x64
 		{3BCB2402-1076-4BAC-9D6E-CAFDC4EE9DFF}.Release|x64.Build.0 = Release|x64
+		{F4CCC1EE-C702-4EB2-AF4F-4C23BA3E8440}.Debug|x64.ActiveCfg = Debug|x64
+		{F4CCC1EE-C702-4EB2-AF4F-4C23BA3E8440}.Debug|x64.Build.0 = Debug|x64
+		{F4CCC1EE-C702-4EB2-AF4F-4C23BA3E8440}.Release|x64.ActiveCfg = Release|x64
+		{F4CCC1EE-C702-4EB2-AF4F-4C23BA3E8440}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
