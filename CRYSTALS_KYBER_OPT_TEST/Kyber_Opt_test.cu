@@ -1165,7 +1165,6 @@ __global__ void GPU_Kyber(uint8_t* pk, uint8_t* sk, uint8_t* ct, uint8_t* ss, ui
     PQCLEAN_KYBER512_CLEAN_crypto_kem_dec(ss2 + 32 * tid, ct + KYBER_CIPHERTEXTBYTES * tid, sk + PQCLEAN_KYBER512_CLEAN_CRYPTO_SECRETKEYBYTES * tid);
 }
 
-
 // 1 thread - 1 Keypair
 __global__ void GPU_KYBER_KEYPAIR(uint8_t* pk, uint8_t* sk)
 {
