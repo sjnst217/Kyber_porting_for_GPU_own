@@ -1194,6 +1194,7 @@ void test_Kyber(uint64_t blocksize, uint64_t threadsize)
     cudaMalloc((void**)&GPU_ss, 32 * blocksize * threadsize);
     cudaMalloc((void**)&GPU_ss2, 32 * blocksize * threadsize);
 
+
     printf("\nStart...\n");
 
     cudaEventCreate(&start);

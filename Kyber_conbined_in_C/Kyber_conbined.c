@@ -1,10 +1,7 @@
-Ôªø#include "cuda_runtime.h"
-#include "device_launch_parameters.h"
-
 #include <stdio.h>
-#include "kem_1.cuh"
-#include "type_1.cuh"
-#include "fips202_1.cuh"
+#include "kem.h"
+#include "type.h"
+#include "fips202.h"
 #include <ctype.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -25,13 +22,13 @@
 
 #define XOF_BLOCKBYTES SHAKE128_RATE
 
-__device__ static void randombytes_win32_randombytes(uint8_t* buf, const size_t n) {
+static void randombytes_win32_randombytes(uint8_t* buf, const size_t n) {
     for (int i = 0; i < 32; i++) {
         *buf = i;
         buf++;
     }
 }
-__device__ void PQCLEAN_KYBER512_CLEAN_poly_frommsg(poly* r, const uint8_t msg[KYBER_INDCPA_MSGBYTES]) {
+void PQCLEAN_KYBER512_CLEAN_poly_frommsg(poly* r, const uint8_t msg[KYBER_INDCPA_MSGBYTES]) {
     size_t i, j;
     int16_t mask;
 
@@ -43,7 +40,7 @@ __device__ void PQCLEAN_KYBER512_CLEAN_poly_frommsg(poly* r, const uint8_t msg[K
     }
 }
 
-__device__ static const uint64_t KeccakF_RoundConstants[NROUNDS] = {
+static const uint64_t KeccakF_RoundConstants[NROUNDS] = {
     0x0000000000000001ULL, 0x0000000000008082ULL,
     0x800000000000808aULL, 0x8000000080008000ULL,
     0x000000000000808bULL, 0x0000000080000001ULL,
@@ -57,7 +54,7 @@ __device__ static const uint64_t KeccakF_RoundConstants[NROUNDS] = {
     0x8000000080008081ULL, 0x8000000000008080ULL,
     0x0000000080000001ULL, 0x8000000080008008ULL
 };
-__device__ const int16_t PQCLEAN_KYBER512_CLEAN_zetas[128] = {
+const int16_t PQCLEAN_KYBER512_CLEAN_zetas[128] = {
     -1044,  -758,  -359, -1517,  1493,  1422,   287,   202,
         -171,   622,  1577,   182,   962, -1202, -1474,  1468,
         573, -1325,   264,   383,  -829,  1458, -1602,  -130,
@@ -76,12 +73,12 @@ __device__ const int16_t PQCLEAN_KYBER512_CLEAN_zetas[128] = {
         -108,  -308,   996,   991,   958, -1460,  1522,  1628
 };
 
-__device__ static void store64(uint8_t* x, uint64_t u) {
+static void store64(uint8_t* x, uint64_t u) {
     for (size_t i = 0; i < 8; ++i) {
         x[i] = (uint8_t)(u >> 8 * i);
     }
 }
-__device__ static uint64_t load64(const uint8_t* x) {
+static uint64_t load64(const uint8_t* x) {
     uint64_t r = 0;
     for (size_t i = 0; i < 8; ++i) {
         r |= (uint64_t)x[i] << 8 * i;
@@ -89,7 +86,7 @@ __device__ static uint64_t load64(const uint8_t* x) {
 
     return r;
 }
-__device__ static uint32_t load24_littleendian(const uint8_t x[3])
+static uint32_t load24_littleendian(const uint8_t x[3])
 {
     uint32_t r;
     r = (uint32_t)x[0];
@@ -97,7 +94,7 @@ __device__ static uint32_t load24_littleendian(const uint8_t x[3])
     r |= (uint32_t)x[2] << 16;
     return r;
 }
-__device__ static uint32_t load32_littleendian(const uint8_t x[4]) {
+static uint32_t load32_littleendian(const uint8_t x[4]) {
     uint32_t r;
     r = (uint32_t)x[0];
     r |= (uint32_t)x[1] << 8;
@@ -106,7 +103,7 @@ __device__ static uint32_t load32_littleendian(const uint8_t x[4]) {
     return r;
 }
 
-__device__ void PQCLEAN_KYBER512_CLEAN_poly_tobytes(uint8_t r[KYBER_POLYBYTES], const poly* a)
+void PQCLEAN_KYBER512_CLEAN_poly_tobytes(uint8_t r[KYBER_POLYBYTES], const poly* a)
 {
     size_t i;
     uint16_t t0, t1;
@@ -122,7 +119,7 @@ __device__ void PQCLEAN_KYBER512_CLEAN_poly_tobytes(uint8_t r[KYBER_POLYBYTES], 
         r[3 * i + 2] = (uint8_t)(t1 >> 4);
     }
 }
-__device__ void PQCLEAN_KYBER512_CLEAN_poly_tomsg(uint8_t msg[KYBER_INDCPA_MSGBYTES], const poly* a) {
+void PQCLEAN_KYBER512_CLEAN_poly_tomsg(uint8_t msg[KYBER_INDCPA_MSGBYTES], const poly* a) {
     size_t i, j;
     uint16_t t;
 
@@ -137,7 +134,7 @@ __device__ void PQCLEAN_KYBER512_CLEAN_poly_tomsg(uint8_t msg[KYBER_INDCPA_MSGBY
     }
 }
 
-__device__ static void KeccakF1600_StatePermute(uint64_t* state) {
+static void KeccakF1600_StatePermute(uint64_t* state) {
     int round;
 
     uint64_t Aba, Abe, Abi, Abo, Abu;
@@ -399,7 +396,7 @@ __device__ static void KeccakF1600_StatePermute(uint64_t* state) {
     state[23] = Aso;
     state[24] = Asu;
 }
-__device__ static void keccak_absorb(uint64_t* s, uint32_t r, const uint8_t* m, size_t mlen, uint8_t p) {
+static void keccak_absorb(uint64_t* s, uint32_t r, const uint8_t* m, size_t mlen, uint8_t p) {
     size_t i;
     uint8_t t[200];
 
@@ -430,17 +427,17 @@ __device__ static void keccak_absorb(uint64_t* s, uint32_t r, const uint8_t* m, 
         s[i] ^= load64(t + 8 * i);
     }
 }
-__device__ void shake128_ctx_release(shake128ctx* state)
+void shake128_ctx_release(shake128ctx* state)
 {
     free(state->ctx);
 }
-__device__ void shake128_absorb(shake128ctx* state, const uint8_t* input, size_t inlen)
+void shake128_absorb(shake128ctx* state, const uint8_t* input, size_t inlen)
 {
     state->ctx = (uint64_t*)malloc(PQC_SHAKECTX_BYTES);
 
     keccak_absorb(state->ctx, SHAKE128_RATE, input, inlen, 0x1F);
 }
-__device__ static void keccak_squeezeblocks(uint8_t* h, size_t nblocks, uint64_t* s, uint32_t r) {
+static void keccak_squeezeblocks(uint8_t* h, size_t nblocks, uint64_t* s, uint32_t r) {
     while (nblocks > 0) {
         KeccakF1600_StatePermute(s);
         for (size_t i = 0; i < (r >> 3); i++) {
@@ -450,12 +447,12 @@ __device__ static void keccak_squeezeblocks(uint8_t* h, size_t nblocks, uint64_t
         nblocks--;
     }
 }
-__device__ void shake128_squeezeblocks(uint8_t* output, size_t nblocks, shake128ctx* state)
+void shake128_squeezeblocks(uint8_t* output, size_t nblocks, shake128ctx* state)
 {
     keccak_squeezeblocks(output, nblocks, state->ctx, SHAKE128_RATE);
 }
 
-__device__ void PQCLEAN_KYBER512_CLEAN_poly_compress(uint8_t r[KYBER_POLYCOMPRESSEDBYTES], const poly* a) {
+void PQCLEAN_KYBER512_CLEAN_poly_compress(uint8_t r[KYBER_POLYCOMPRESSEDBYTES], const poly* a) {
     size_t i, j;
     int16_t u;
     uint8_t t[8];
@@ -475,7 +472,7 @@ __device__ void PQCLEAN_KYBER512_CLEAN_poly_compress(uint8_t r[KYBER_POLYCOMPRES
         r += 4;
     }
 }
-__device__ void PQCLEAN_KYBER512_CLEAN_polyvec_compress(uint8_t r[KYBER_POLYVECCOMPRESSEDBYTES], const polyvec* a) {
+void PQCLEAN_KYBER512_CLEAN_polyvec_compress(uint8_t r[KYBER_POLYVECCOMPRESSEDBYTES], const polyvec* a) {
     unsigned int i, j, k;
 
     uint16_t t[4];
@@ -496,18 +493,18 @@ __device__ void PQCLEAN_KYBER512_CLEAN_polyvec_compress(uint8_t r[KYBER_POLYVECC
         }
     }
 }
-__device__ void PQCLEAN_KYBER512_CLEAN_polyvec_tobytes(uint8_t r[KYBER_POLYVECBYTES], const polyvec* a)
+void PQCLEAN_KYBER512_CLEAN_polyvec_tobytes(uint8_t r[KYBER_POLYVECBYTES], const polyvec* a)
 {
     unsigned int i;
     for (i = 0; i < KYBER_K; i++) {
         PQCLEAN_KYBER512_CLEAN_poly_tobytes(r + i * KYBER_POLYBYTES, &a->vec[i]);
     }
 }
-__device__ static void pack_sk(uint8_t r[KYBER_INDCPA_SECRETKEYBYTES], polyvec* sk)
+static void pack_sk(uint8_t r[KYBER_INDCPA_SECRETKEYBYTES], polyvec* sk)
 {
     PQCLEAN_KYBER512_CLEAN_polyvec_tobytes(r, sk);
 }
-__device__ static void pack_pk(uint8_t r[KYBER_INDCPA_PUBLICKEYBYTES], polyvec* pk, const uint8_t seed[KYBER_SYMBYTES])
+static void pack_pk(uint8_t r[KYBER_INDCPA_PUBLICKEYBYTES], polyvec* pk, const uint8_t seed[KYBER_SYMBYTES])
 {
     size_t i;
     PQCLEAN_KYBER512_CLEAN_polyvec_tobytes(r, pk);
@@ -515,7 +512,7 @@ __device__ static void pack_pk(uint8_t r[KYBER_INDCPA_PUBLICKEYBYTES], polyvec* 
         r[i + KYBER_POLYVECBYTES] = seed[i];
     }
 }
-__device__ void PQCLEAN_KYBER512_CLEAN_kyber_shake128_absorb(xof_state* state, const uint8_t seed[KYBER_SYMBYTES], uint8_t x, uint8_t y)
+void PQCLEAN_KYBER512_CLEAN_kyber_shake128_absorb(xof_state* state, const uint8_t seed[KYBER_SYMBYTES], uint8_t x, uint8_t y)
 {
     uint8_t extseed[KYBER_SYMBYTES + 2];
 
@@ -525,7 +522,7 @@ __device__ void PQCLEAN_KYBER512_CLEAN_kyber_shake128_absorb(xof_state* state, c
 
     shake128_absorb(state, extseed, sizeof(extseed));
 }
-__device__ static unsigned int rej_uniform(int16_t* r, unsigned int len, const uint8_t* buf, unsigned int buflen)
+static unsigned int rej_uniform(int16_t* r, unsigned int len, const uint8_t* buf, unsigned int buflen)
 {
     unsigned int ctr, pos;
     uint16_t val0, val1;
@@ -546,7 +543,7 @@ __device__ static unsigned int rej_uniform(int16_t* r, unsigned int len, const u
 
     return ctr;
 }
-__device__ void PQCLEAN_KYBER512_CLEAN_gen_matrix(polyvec* a, const uint8_t seed[KYBER_SYMBYTES], int transposed) {
+void PQCLEAN_KYBER512_CLEAN_gen_matrix(polyvec* a, const uint8_t seed[KYBER_SYMBYTES], int transposed) {
     unsigned int ctr, i, j, k;
     unsigned int buflen, off;
     uint8_t buf[GEN_MATRIX_NBLOCKS * XOF_BLOCKBYTES + 2];
@@ -579,7 +576,7 @@ __device__ void PQCLEAN_KYBER512_CLEAN_gen_matrix(polyvec* a, const uint8_t seed
     }
 }
 
-__device__ void sha3_256(uint8_t* output, const uint8_t* input, size_t inlen)
+void sha3_256(uint8_t* output, const uint8_t* input, size_t inlen)
 {
     uint64_t s[25];
     uint8_t t[SHA3_256_RATE];
@@ -594,7 +591,7 @@ __device__ void sha3_256(uint8_t* output, const uint8_t* input, size_t inlen)
         output[i] = t[i];
     }
 }
-__device__ void sha3_512(uint8_t* output, const uint8_t* input, size_t inlen) {
+void sha3_512(uint8_t* output, const uint8_t* input, size_t inlen) {
     uint64_t s[25];
     uint8_t t[SHA3_512_RATE];
 
@@ -608,21 +605,21 @@ __device__ void sha3_512(uint8_t* output, const uint8_t* input, size_t inlen) {
         output[i] = t[i];
     }
 }
-__device__ void shake256_absorb(shake256ctx* state, const uint8_t* input, size_t inlen)
+void shake256_absorb(shake256ctx* state, const uint8_t* input, size_t inlen)
 {
     state->ctx = (uint64_t*)malloc(PQC_SHAKECTX_BYTES);
 
     keccak_absorb(state->ctx, SHAKE256_RATE, input, inlen, 0x1F);
 }
-__device__ void shake256_squeezeblocks(uint8_t* output, size_t nblocks, shake256ctx* state)
+void shake256_squeezeblocks(uint8_t* output, size_t nblocks, shake256ctx* state)
 {
     keccak_squeezeblocks(output, nblocks, state->ctx, SHAKE256_RATE);
 }
-__device__ void shake256_ctx_release(shake256ctx* state)
+void shake256_ctx_release(shake256ctx* state)
 {
     free(state->ctx);
 }
-__device__ void shake256(uint8_t* output, size_t outlen, const uint8_t* input, size_t inlen)
+void shake256(uint8_t* output, size_t outlen, const uint8_t* input, size_t inlen)
 {
     size_t nblocks = outlen / SHAKE256_RATE;
     uint8_t t[SHAKE256_RATE];
@@ -643,7 +640,7 @@ __device__ void shake256(uint8_t* output, size_t outlen, const uint8_t* input, s
     shake256_ctx_release(&s);
 }
 
-__device__ static void cbd3(poly* r, const uint8_t buf[3 * KYBER_N / 4])
+static void cbd3(poly* r, const uint8_t buf[3 * KYBER_N / 4])
 {
     unsigned int i, j;
     uint32_t t, d;
@@ -662,11 +659,11 @@ __device__ static void cbd3(poly* r, const uint8_t buf[3 * KYBER_N / 4])
         }
     }
 }
-__device__ void PQCLEAN_KYBER512_CLEAN_poly_cbd_eta1(poly* r, const uint8_t buf[KYBER_ETA1 * KYBER_N / 4])
+void PQCLEAN_KYBER512_CLEAN_poly_cbd_eta1(poly* r, const uint8_t buf[KYBER_ETA1 * KYBER_N / 4])
 {
     cbd3(r, buf);
 }
-__device__ void PQCLEAN_KYBER512_CLEAN_kyber_shake256_prf(uint8_t* out, size_t outlen, const uint8_t key[KYBER_SYMBYTES], uint8_t nonce) {
+void PQCLEAN_KYBER512_CLEAN_kyber_shake256_prf(uint8_t* out, size_t outlen, const uint8_t key[KYBER_SYMBYTES], uint8_t nonce) {
     uint8_t extkey[KYBER_SYMBYTES + 1];
 
     memcpy(extkey, key, KYBER_SYMBYTES);
@@ -674,12 +671,13 @@ __device__ void PQCLEAN_KYBER512_CLEAN_kyber_shake256_prf(uint8_t* out, size_t o
 
     shake256(out, outlen, extkey, sizeof(extkey));
 }
-__device__ void PQCLEAN_KYBER512_CLEAN_poly_getnoise_eta1(poly* r, const uint8_t seed[KYBER_SYMBYTES], uint8_t nonce) {
+void PQCLEAN_KYBER512_CLEAN_poly_getnoise_eta1(poly* r, const uint8_t seed[KYBER_SYMBYTES], uint8_t nonce) {
     uint8_t buf[KYBER_ETA1 * KYBER_N / 4];
     prf(buf, sizeof(buf), seed, nonce);
     PQCLEAN_KYBER512_CLEAN_poly_cbd_eta1(r, buf);
 }
-__device__ int16_t PQCLEAN_KYBER512_CLEAN_montgomery_reduce(int32_t a)
+
+int16_t PQCLEAN_KYBER512_CLEAN_montgomery_reduce(int32_t a)
 {
     int16_t t;
 
@@ -687,11 +685,12 @@ __device__ int16_t PQCLEAN_KYBER512_CLEAN_montgomery_reduce(int32_t a)
     t = (a - (int32_t)t * KYBER_Q) >> 16;
     return t;
 }
-__device__ static int16_t fqmul(int16_t a, int16_t b)
+
+static int16_t fqmul(int16_t a, int16_t b)
 {
     return PQCLEAN_KYBER512_CLEAN_montgomery_reduce((int32_t)a * b);
 }
-__device__ void PQCLEAN_KYBER512_CLEAN_ntt(int16_t r[256])
+void PQCLEAN_KYBER512_CLEAN_ntt(int16_t r[256])
 {
     unsigned int len, start, j, k;
     int16_t t, zeta;
@@ -708,7 +707,7 @@ __device__ void PQCLEAN_KYBER512_CLEAN_ntt(int16_t r[256])
         }
     }
 }
-__device__ int16_t PQCLEAN_KYBER512_CLEAN_barrett_reduce(int16_t a) {
+int16_t PQCLEAN_KYBER512_CLEAN_barrett_reduce(int16_t a) {
     int16_t t;
     const int16_t v = ((1 << 26) + KYBER_Q / 2) / KYBER_Q;
 
@@ -716,26 +715,26 @@ __device__ int16_t PQCLEAN_KYBER512_CLEAN_barrett_reduce(int16_t a) {
     t *= KYBER_Q;
     return a - t;
 }
-__device__ void PQCLEAN_KYBER512_CLEAN_poly_sub(poly* r, const poly* a, const poly* b) {
+void PQCLEAN_KYBER512_CLEAN_poly_sub(poly* r, const poly* a, const poly* b) {
     size_t i;
     for (i = 0; i < KYBER_N; i++) {
         r->coeffs[i] = a->coeffs[i] - b->coeffs[i];
     }
 }
 
-__device__ void PQCLEAN_KYBER512_CLEAN_poly_reduce(poly* r)
+void PQCLEAN_KYBER512_CLEAN_poly_reduce(poly* r)
 {
     size_t i;
     for (i = 0; i < KYBER_N; i++) {
         r->coeffs[i] = PQCLEAN_KYBER512_CLEAN_barrett_reduce(r->coeffs[i]);
     }
 }
-__device__ void PQCLEAN_KYBER512_CLEAN_poly_ntt(poly* r)
+void PQCLEAN_KYBER512_CLEAN_poly_ntt(poly* r)
 {
     PQCLEAN_KYBER512_CLEAN_ntt(r->coeffs);
     PQCLEAN_KYBER512_CLEAN_poly_reduce(r);
 }
-__device__ void PQCLEAN_KYBER512_CLEAN_polyvec_ntt(polyvec* r)
+void PQCLEAN_KYBER512_CLEAN_polyvec_ntt(polyvec* r)
 {
     unsigned int i;
     for (i = 0; i < KYBER_K; i++) {
@@ -743,7 +742,7 @@ __device__ void PQCLEAN_KYBER512_CLEAN_polyvec_ntt(polyvec* r)
     }
 }
 
-__device__ void PQCLEAN_KYBER512_CLEAN_basemul(int16_t r[2], const int16_t a[2], const int16_t b[2], int16_t zeta)
+void PQCLEAN_KYBER512_CLEAN_basemul(int16_t r[2], const int16_t a[2], const int16_t b[2], int16_t zeta)
 {
     r[0] = fqmul(a[1], b[1]);
     r[0] = fqmul(r[0], zeta);
@@ -751,7 +750,7 @@ __device__ void PQCLEAN_KYBER512_CLEAN_basemul(int16_t r[2], const int16_t a[2],
     r[1] = fqmul(a[0], b[1]);
     r[1] += fqmul(a[1], b[0]);
 }
-__device__ void PQCLEAN_KYBER512_CLEAN_poly_basemul_montgomery(poly* r, const poly* a, const poly* b)
+void PQCLEAN_KYBER512_CLEAN_poly_basemul_montgomery(poly* r, const poly* a, const poly* b)
 {
     size_t i;
     for (i = 0; i < KYBER_N / 4; i++) {
@@ -759,14 +758,14 @@ __device__ void PQCLEAN_KYBER512_CLEAN_poly_basemul_montgomery(poly* r, const po
         PQCLEAN_KYBER512_CLEAN_basemul(&r->coeffs[4 * i + 2], &a->coeffs[4 * i + 2], &b->coeffs[4 * i + 2], -PQCLEAN_KYBER512_CLEAN_zetas[64 + i]);
     }
 }
-__device__ void PQCLEAN_KYBER512_CLEAN_poly_add(poly* r, const poly* a, const poly* b)
+void PQCLEAN_KYBER512_CLEAN_poly_add(poly* r, const poly* a, const poly* b)
 {
     size_t i;
     for (i = 0; i < KYBER_N; i++) {
         r->coeffs[i] = a->coeffs[i] + b->coeffs[i];
     }
 }
-__device__ void PQCLEAN_KYBER512_CLEAN_polyvec_basemul_acc_montgomery(poly* r, const polyvec* a, const polyvec* b)
+void PQCLEAN_KYBER512_CLEAN_polyvec_basemul_acc_montgomery(poly* r, const polyvec* a, const polyvec* b)
 {
     unsigned int i;
     poly t;
@@ -779,7 +778,7 @@ __device__ void PQCLEAN_KYBER512_CLEAN_polyvec_basemul_acc_montgomery(poly* r, c
 
     PQCLEAN_KYBER512_CLEAN_poly_reduce(r);
 }
-__device__ void PQCLEAN_KYBER512_CLEAN_poly_tomont(poly* r)
+void PQCLEAN_KYBER512_CLEAN_poly_tomont(poly* r)
 {
     size_t i;
     const int16_t f = (1ULL << 32) % KYBER_Q;
@@ -787,61 +786,61 @@ __device__ void PQCLEAN_KYBER512_CLEAN_poly_tomont(poly* r)
         r->coeffs[i] = PQCLEAN_KYBER512_CLEAN_montgomery_reduce((int32_t)r->coeffs[i] * f);
     }
 }
-__device__ void PQCLEAN_KYBER512_CLEAN_polyvec_add(polyvec* r, const polyvec* a, const polyvec* b)
+void PQCLEAN_KYBER512_CLEAN_polyvec_add(polyvec* r, const polyvec* a, const polyvec* b)
 {
     unsigned int i;
     for (i = 0; i < KYBER_K; i++) {
         PQCLEAN_KYBER512_CLEAN_poly_add(&r->vec[i], &a->vec[i], &b->vec[i]);
     }
 }
-__device__ void PQCLEAN_KYBER512_CLEAN_polyvec_reduce(polyvec* r) {
+void PQCLEAN_KYBER512_CLEAN_polyvec_reduce(polyvec* r) {
     unsigned int i;
     for (i = 0; i < KYBER_K; i++) {
         PQCLEAN_KYBER512_CLEAN_poly_reduce(&r->vec[i]);
     }
 }
 
-__device__ void PQCLEAN_KYBER512_CLEAN_indcpa_keypair(uint8_t pk[KYBER_INDCPA_PUBLICKEYBYTES], uint8_t sk[KYBER_INDCPA_SECRETKEYBYTES])
+void PQCLEAN_KYBER512_CLEAN_indcpa_keypair(uint8_t pk[KYBER_INDCPA_PUBLICKEYBYTES], uint8_t sk[KYBER_INDCPA_SECRETKEYBYTES])
 {
     unsigned int i;
-    uint8_t buf[2 * KYBER_SYMBYTES];                    // Ìï¥Ïãú, ÏãúÎìúÎ•º Ï†ÄÏû•ÌïòÎäî Î∞∞Ïó¥
-    const uint8_t* publicseed = buf;                    // Í≥µÍ∞úÌÇ§Ïùò seedÍ∞íÏùò Ï†ÄÏû•ÏùÑ ÏúÑÌïú publicseed ÏÑ†Ïñ∏
-    const uint8_t* noiseseed = buf + KYBER_SYMBYTES;    // noiseÍ∞íÏùò seedÍ∞íÏùÑ Ï†ÄÏû•ÌïòÍ∏∞ ÏúÑÌïú noiseseed ÏÑ†Ïñ∏
+    uint8_t buf[2 * KYBER_SYMBYTES];                    // «ÿΩ√, Ω√µÂ∏¶ ¿˙¿Â«œ¥¬ πËø≠
+    const uint8_t* publicseed = buf;                    // ∞¯∞≥≈∞¿« seed∞™¿« ¿˙¿Â¿ª ¿ß«— publicseed º±æ
+    const uint8_t* noiseseed = buf + KYBER_SYMBYTES;    // noise∞™¿« seed∞™¿ª ¿˙¿Â«œ±‚ ¿ß«— noiseseed º±æ
 
-    /** Í≥ºÏ†ï 3 **/
+    /** ∞˙¡§ 3 **/
     uint8_t nonce = 0;
 
     polyvec a[KYBER_K], e, pkpv, skpv;
 
-    /** Í≥ºÏ†ï 1 **/
-    //randombytes(buf, KYBER_SYMBYTES);                 // ÎûúÎç§Ìïú 32Î∞îÏù¥Ìä∏ ÏÉùÏÑ±
+    /** ∞˙¡§ 1 **/
+    //randombytes(buf, KYBER_SYMBYTES);                 // ∑£¥˝«— 32πŸ¿Ã∆Æ ª˝º∫
     for (int i = 0; i < 32; i++) {
         buf[i] = i;
     }
 
-    /** Í≥ºÏ†ï 2 **/
-    hash_g(buf, buf, KYBER_SYMBYTES);                   // SHA3_512Î°ú ÎûúÎç§Í∞íÏùÑ SeedÎ°ú ÎßåÎì§Ïñ¥Ï§å -> SHA3_512Ïùò Ïïû 32byteÎ•º Í≥µÍ∞úÌÇ§Ïùò seedÍ∞í, Îí§ 32byteÎ•º noiseÏùò seedÍ∞í ÏúºÎ°ú ÏÇ¨Ïö©
+    /** ∞˙¡§ 2 **/
+    hash_g(buf, buf, KYBER_SYMBYTES);                   // SHA3_512∑Œ ∑£¥˝∞™¿ª Seed∑Œ ∏∏µÈæÓ¡‹ -> SHA3_512¿« æ’ 32byte∏¶ ∞¯∞≥≈∞¿« seed∞™, µ⁄ 32byte∏¶ noise¿« seed∞™ ¿∏∑Œ ªÁøÎ
 
-    /** Í≥ºÏ†ï 4 ~ 8 **/
-    gen_a(a, publicseed);                               //Í≥µÍ∞úÌñâÎ†¨ a ÏÉùÏÑ± (2x2)
+    /** ∞˙¡§ 4 ~ 8 **/
+    gen_a(a, publicseed);                               //∞¯∞≥«‡∑ƒ a ª˝º∫ (2x2)
 
-    /** Í≥ºÏ†ï 9 ~ 12 **/
+    /** ∞˙¡§ 9 ~ 12 **/
     for (i = 0; i < KYBER_K; i++) {
         PQCLEAN_KYBER512_CLEAN_poly_getnoise_eta1(&skpv.vec[i], noiseseed, nonce++);    //skpv.vec[0], noiseseed, 0 -> skpv.vec[1], noiseseed, 1
-    }   // ÎπÑÎ∞ÄÌÇ§ s ÏÉùÏÑ±
+    }   // ∫Òπ–≈∞ s ª˝º∫
 
-    /** Í≥ºÏ†ï 13 ~ 16 **/
+    /** ∞˙¡§ 13 ~ 16 **/
     for (i = 0; i < KYBER_K; i++) {
         PQCLEAN_KYBER512_CLEAN_poly_getnoise_eta1(&e.vec[i], noiseseed, nonce++);       //e.vec[0], noiseseed, 2 -> e.vec[1], noiseseed, 3
-    }   // ÏóêÎü¨Îã§Ìï≠Ïãù e ÏÉùÏÑ±
+    }   // ø°∑Ø¥Ÿ«◊Ωƒ e ª˝º∫
 
 
-    /** Í≥ºÏ†ï 17 ~ 18 **/
-    PQCLEAN_KYBER512_CLEAN_polyvec_ntt(&skpv);  // sÎ•º NTTÎ≥ÄÌôò!
-    PQCLEAN_KYBER512_CLEAN_polyvec_ntt(&e);     // eÎ•º NTT Î≥ÄÌôò!
+    /** ∞˙¡§ 17 ~ 18 **/
+    PQCLEAN_KYBER512_CLEAN_polyvec_ntt(&skpv);  // s∏¶ NTT∫Ø»Ø!
+    PQCLEAN_KYBER512_CLEAN_polyvec_ntt(&e);     // e∏¶ NTT ∫Ø»Ø!
 
 
-    /** Í≥ºÏ†ï 19 **/
+    /** ∞˙¡§ 19 **/
     // matrix-vector multiplication
     for (i = 0; i < KYBER_K; i++) {
         PQCLEAN_KYBER512_CLEAN_polyvec_basemul_acc_montgomery(&pkpv.vec[i], &a[i], &skpv);
@@ -849,37 +848,37 @@ __device__ void PQCLEAN_KYBER512_CLEAN_indcpa_keypair(uint8_t pk[KYBER_INDCPA_PU
     } // X = A*s
 
     PQCLEAN_KYBER512_CLEAN_polyvec_add(&pkpv, &pkpv, &e);       // X + e
-    PQCLEAN_KYBER512_CLEAN_polyvec_reduce(&pkpv);               // Îã§Ìï≠Ïãù Í≥ÑÏàòÎì§Ïóê ÎåÄÌï¥ mod q
+    PQCLEAN_KYBER512_CLEAN_polyvec_reduce(&pkpv);               // ¥Ÿ«◊Ωƒ ∞ËºˆµÈø° ¥Î«ÿ mod q
 
-    /** Í≥ºÏ†ï 20 ~ 21 **/
-    pack_sk(sk, &skpv);                                         //sk ÏßÅÎ†¨Ìôî -> Ï¶â Î∞îÏù¥Ìä∏ Î∞∞Ïó¥Î°ú Ï†ÄÏû•
-    pack_pk(pk, &pkpv, publicseed);                             //pk ÏßÅÎ†¨Ìôî -> Ï¶â Î∞îÏù¥Ìä∏ Î∞∞Ïó¥Î°ú Ï†ÄÏû•
+    /** ∞˙¡§ 20 ~ 21 **/
+    pack_sk(sk, &skpv);                                         //sk ¡˜∑ƒ»≠ -> ¡Ô πŸ¿Ã∆Æ πËø≠∑Œ ¿˙¿Â
+    pack_pk(pk, &pkpv, publicseed);                             //pk ¡˜∑ƒ»≠ -> ¡Ô πŸ¿Ã∆Æ πËø≠∑Œ ¿˙¿Â
 }
-__device__ void PQCLEAN_KYBER512_CLEAN_poly_frombytes(poly* r, const uint8_t a[KYBER_POLYBYTES]) {
+void PQCLEAN_KYBER512_CLEAN_poly_frombytes(poly* r, const uint8_t a[KYBER_POLYBYTES]) {
     size_t i;
     for (i = 0; i < KYBER_N / 2; i++) {
         r->coeffs[2 * i] = ((a[3 * i + 0] >> 0) | ((uint16_t)a[3 * i + 1] << 8)) & 0xFFF;
         r->coeffs[2 * i + 1] = ((a[3 * i + 1] >> 4) | ((uint16_t)a[3 * i + 2] << 4)) & 0xFFF;
     }
 }
-__device__ void PQCLEAN_KYBER512_CLEAN_polyvec_frombytes(polyvec* r, const uint8_t a[KYBER_POLYVECBYTES]) {
+void PQCLEAN_KYBER512_CLEAN_polyvec_frombytes(polyvec* r, const uint8_t a[KYBER_POLYVECBYTES]) {
     unsigned int i;
     for (i = 0; i < KYBER_K; i++) {
         PQCLEAN_KYBER512_CLEAN_poly_frombytes(&r->vec[i], a + i * KYBER_POLYBYTES);
     }
 }
 
-__device__ static void unpack_pk(polyvec* pk, uint8_t seed[KYBER_SYMBYTES], const uint8_t packedpk[KYBER_INDCPA_PUBLICKEYBYTES])
+static void unpack_pk(polyvec* pk, uint8_t seed[KYBER_SYMBYTES], const uint8_t packedpk[KYBER_INDCPA_PUBLICKEYBYTES])
 {
     size_t i;
-    /** Í≥ºÏ†ï 2 **/
+    /** ∞˙¡§ 2 **/
     PQCLEAN_KYBER512_CLEAN_polyvec_frombytes(pk, packedpk);
     for (i = 0; i < KYBER_SYMBYTES; i++) {
-        /** Í≥ºÏ†ï 3 **/
+        /** ∞˙¡§ 3 **/
         seed[i] = packedpk[i + KYBER_POLYVECBYTES];
     }
 }
-__device__ static void cbd2(poly* r, const uint8_t buf[2 * KYBER_N / 4]) {
+static void cbd2(poly* r, const uint8_t buf[2 * KYBER_N / 4]) {
     unsigned int i, j;
     uint32_t t, d;
     int16_t a, b;
@@ -896,16 +895,16 @@ __device__ static void cbd2(poly* r, const uint8_t buf[2 * KYBER_N / 4]) {
         }
     }
 }
-__device__ void PQCLEAN_KYBER512_CLEAN_poly_cbd_eta2(poly* r, const uint8_t buf[KYBER_ETA2 * KYBER_N / 4]) {
+void PQCLEAN_KYBER512_CLEAN_poly_cbd_eta2(poly* r, const uint8_t buf[KYBER_ETA2 * KYBER_N / 4]) {
     cbd2(r, buf);
 }
-__device__ void PQCLEAN_KYBER512_CLEAN_poly_getnoise_eta2(poly* r, const uint8_t seed[KYBER_SYMBYTES], uint8_t nonce) {
+void PQCLEAN_KYBER512_CLEAN_poly_getnoise_eta2(poly* r, const uint8_t seed[KYBER_SYMBYTES], uint8_t nonce) {
     uint8_t buf[KYBER_ETA2 * KYBER_N / 4];
     prf(buf, sizeof(buf), seed, nonce);
     PQCLEAN_KYBER512_CLEAN_poly_cbd_eta2(r, buf);
 }
 
-__device__ void PQCLEAN_KYBER512_CLEAN_invntt(int16_t r[256]) {
+void PQCLEAN_KYBER512_CLEAN_invntt(int16_t r[256]) {
     unsigned int start, len, j, k;
     int16_t t, zeta;
     const int16_t f = 1441; // mont^2/128
@@ -927,88 +926,88 @@ __device__ void PQCLEAN_KYBER512_CLEAN_invntt(int16_t r[256]) {
         r[j] = fqmul(r[j], f);
     }
 }
-__device__ void PQCLEAN_KYBER512_CLEAN_poly_invntt_tomont(poly* r) {
+void PQCLEAN_KYBER512_CLEAN_poly_invntt_tomont(poly* r) {
     PQCLEAN_KYBER512_CLEAN_invntt(r->coeffs);
 }
-__device__ void PQCLEAN_KYBER512_CLEAN_polyvec_invntt_tomont(polyvec* r) {
+void PQCLEAN_KYBER512_CLEAN_polyvec_invntt_tomont(polyvec* r) {
     unsigned int i;
     for (i = 0; i < KYBER_K; i++) {
         PQCLEAN_KYBER512_CLEAN_poly_invntt_tomont(&r->vec[i]);
     }
 }
 
-__device__ static void pack_ciphertext(uint8_t r[KYBER_INDCPA_BYTES], polyvec* b, poly* v) {
+static void pack_ciphertext(uint8_t r[KYBER_INDCPA_BYTES], polyvec* b, poly* v) {
     PQCLEAN_KYBER512_CLEAN_polyvec_compress(r, b);
     PQCLEAN_KYBER512_CLEAN_poly_compress(r + KYBER_POLYVECCOMPRESSEDBYTES, v);
 }
-__device__ void PQCLEAN_KYBER512_CLEAN_indcpa_enc(uint8_t* c, const uint8_t m[KYBER_INDCPA_MSGBYTES], const uint8_t pk[KYBER_INDCPA_PUBLICKEYBYTES], const uint8_t coins[KYBER_SYMBYTES])   //ÏïåÍ≥†Î¶¨Ï¶ò 4
+void PQCLEAN_KYBER512_CLEAN_indcpa_enc(uint8_t* c, const uint8_t m[KYBER_INDCPA_MSGBYTES], const uint8_t pk[KYBER_INDCPA_PUBLICKEYBYTES], const uint8_t coins[KYBER_SYMBYTES])   //æÀ∞Ì∏Æ¡Ú 4
 {
     unsigned int i;
     uint8_t seed[KYBER_SYMBYTES];
-    uint8_t nonce = 0;                      // /** Í≥ºÏ†ï 1 **/
+    uint8_t nonce = 0;                      // /** ∞˙¡§ 1 **/
     polyvec sp, pkpv, ep, at[KYBER_K], b;
     poly v, k, epp;
 
-    /** Í≥ºÏ†ï 2, 3 **/
-    unpack_pk(&pkpv, seed, pk);                 //array -> module Ïù¥ÎùºÍ≥† ÏÉùÍ∞ÅÌïòÎäîÍ≤å Ìé∏Ìï®
+    /** ∞˙¡§ 2, 3 **/
+    unpack_pk(&pkpv, seed, pk);                 //array -> module ¿Ã∂Û∞Ì ª˝∞¢«œ¥¬∞‘ ∆Ì«‘
 
 
-    /** Í≥ºÏ†ï 4 ~ 8 **/
+    /** ∞˙¡§ 4 ~ 8 **/
     gen_at(at, seed);
 
-    /** Í≥ºÏ†ï 9 ~ 12 **/
+    /** ∞˙¡§ 9 ~ 12 **/
     for (i = 0; i < KYBER_K; i++) {
         PQCLEAN_KYBER512_CLEAN_poly_getnoise_eta1(sp.vec + i, coins, nonce++);
     }
 
-    /** Í≥ºÏ†ï 13 ~ 16 **/
+    /** ∞˙¡§ 13 ~ 16 **/
     for (i = 0; i < KYBER_K; i++) {
         PQCLEAN_KYBER512_CLEAN_poly_getnoise_eta2(ep.vec + i, coins, nonce++);
     }
 
-    /** Í≥ºÏ†ï 17 **/
+    /** ∞˙¡§ 17 **/
     PQCLEAN_KYBER512_CLEAN_poly_getnoise_eta2(&epp, coins, nonce++);
 
-    /** Í≥ºÏ†ï 18 **/
+    /** ∞˙¡§ 18 **/
     PQCLEAN_KYBER512_CLEAN_polyvec_ntt(&sp);
 
-    /** Í≥ºÏ†ï 19 - mul(AT, r) Î∂ÄÎ∂Ñ **/
+    /** ∞˙¡§ 19 - mul(AT, r) ∫Œ∫– **/
     // matrix-vector multiplication
     for (i = 0; i < KYBER_K; i++) {
         PQCLEAN_KYBER512_CLEAN_polyvec_basemul_acc_montgomery(&b.vec[i], &at[i], &sp);
     }
 
-    /** Í≥ºÏ†ï 20 - mul(tT, r) Î∂ÄÎ∂Ñ **/
+    /** ∞˙¡§ 20 - mul(tT, r) ∫Œ∫– **/
     PQCLEAN_KYBER512_CLEAN_polyvec_basemul_acc_montgomery(&v, &pkpv, &sp);
 
-    /** Í≥ºÏ†ï 19 invNTT(mul(AT, r)) Î∂ÄÎ∂Ñ **/
+    /** ∞˙¡§ 19 invNTT(mul(AT, r)) ∫Œ∫– **/
     PQCLEAN_KYBER512_CLEAN_polyvec_invntt_tomont(&b);
 
-    /** Í≥ºÏ†ï 20 invNTT(mul(tT, r)) Î∂ÄÎ∂Ñ **/
+    /** ∞˙¡§ 20 invNTT(mul(tT, r)) ∫Œ∫– **/
     PQCLEAN_KYBER512_CLEAN_poly_invntt_tomont(&v);
 
-    /** Í≥ºÏ†ï 19 invNTT(mul(AT, r)) + e1 Î∂ÄÎ∂Ñ **/
+    /** ∞˙¡§ 19 invNTT(mul(AT, r)) + e1 ∫Œ∫– **/
     PQCLEAN_KYBER512_CLEAN_polyvec_add(&b, &b, &ep);
 
-    /** Í≥ºÏ†ï 20 invNTT(mul(tT, r)) + e2  + Decompress_qÎ∂ÄÎ∂Ñ **/
-    PQCLEAN_KYBER512_CLEAN_poly_add(&v, &v, &epp);  // + e2 Í≥ºÏ†ï
-    PQCLEAN_KYBER512_CLEAN_poly_frommsg(&k, m);     //mÏùò Í∞í(message)ÏùÑ k Í∞í(polynomial)Î°ú Î≥ÄÍ≤Ω, (Decompress_q(Decode_1(m), 1) Í≥ºÏ†ï)
-    PQCLEAN_KYBER512_CLEAN_poly_add(&v, &v, &k);    // + k Í≥ºÏ†ï
+    /** ∞˙¡§ 20 invNTT(mul(tT, r)) + e2  + Decompress_q∫Œ∫– **/
+    PQCLEAN_KYBER512_CLEAN_poly_add(&v, &v, &epp);  // + e2 ∞˙¡§
+    PQCLEAN_KYBER512_CLEAN_poly_frommsg(&k, m);     //m¿« ∞™(message)¿ª k ∞™(polynomial)∑Œ ∫Ø∞Ê, (Decompress_q(Decode_1(m), 1) ∞˙¡§)
+    PQCLEAN_KYBER512_CLEAN_poly_add(&v, &v, &k);    // + k ∞˙¡§
 
-    /** Í≥ºÏ†ï 21 **/
+    /** ∞˙¡§ 21 **/
     PQCLEAN_KYBER512_CLEAN_polyvec_reduce(&b);
 
-    /** Í≥ºÏ†ï 22 **/
+    /** ∞˙¡§ 22 **/
     PQCLEAN_KYBER512_CLEAN_poly_reduce(&v);
 
-    /** Í≥ºÏ†ï 23 **/
+    /** ∞˙¡§ 23 **/
     pack_ciphertext(c, &b, &v);
 }
 
-__device__ void PQCLEAN_KYBER512_CLEAN_crypto_kem_keypair(uint8_t* pk, uint8_t* sk)
+void PQCLEAN_KYBER512_CLEAN_crypto_kem_keypair(uint8_t* pk, uint8_t* sk)
 {
     size_t i;
-    PQCLEAN_KYBER512_CLEAN_indcpa_keypair(pk, sk);                      //ÏïåÍ≥†Î¶¨Ï¶ò 3 -> KEY ÏÉùÏÑ±Ìï®Ïàò : KYBERÏùò CPA(Chosen Plaintext Attack) ÏïàÏ†ÑÏÑ±ÏùÑ ÎßåÏ°±ÌïòÎäî PKE Ïä§ÌÇ¥Ïùò ÌÇ§ÏÉùÏÑ± Í≥ºÏ†ï
+    PQCLEAN_KYBER512_CLEAN_indcpa_keypair(pk, sk);                      //æÀ∞Ì∏Æ¡Ú 3 -> KEY ª˝º∫«‘ºˆ : KYBER¿« CPA(Chosen Plaintext Attack) æ»¿¸º∫¿ª ∏∏¡∑«œ¥¬ PKE Ω∫≈¥¿« ≈∞ª˝º∫ ∞˙¡§
     for (i = 0; i < KYBER_INDCPA_PUBLICKEYBYTES; i++) {
         sk[i + KYBER_INDCPA_SECRETKEYBYTES] = pk[i];
     }
@@ -1017,36 +1016,36 @@ __device__ void PQCLEAN_KYBER512_CLEAN_crypto_kem_keypair(uint8_t* pk, uint8_t* 
     randombytes_win32_randombytes(sk + KYBER_SECRETKEYBYTES - KYBER_SYMBYTES, KYBER_SYMBYTES);
 }
 
-__device__ void PQCLEAN_KYBER512_CLEAN_crypto_kem_enc(uint8_t* ct, uint8_t* ss, uint8_t* pk)  //ÏïåÍ≥†Î¶¨Ï¶ò 7 Encapsulation
+void PQCLEAN_KYBER512_CLEAN_crypto_kem_enc(uint8_t* ct, uint8_t* ss, uint8_t* pk)  //æÀ∞Ì∏Æ¡Ú 7 Encapsulation
 {
     uint8_t buf[2 * KYBER_SYMBYTES];
     /* Will contain key, coins */
     uint8_t kr[2 * KYBER_SYMBYTES];
 
-    /** Í≥ºÏ†ï 1 **/
+    /** ∞˙¡§ 1 **/
     randombytes_win32_randombytes(buf, KYBER_SYMBYTES);
 
     /* Don't release system RNG output */
-    /** Í≥ºÏ†ï 2 **/
+    /** ∞˙¡§ 2 **/
     hash_h(buf, buf, KYBER_SYMBYTES);
 
     /* Multitarget countermeasure for coins + contributory KEM */
-    /** Í≥ºÏ†ï 3 **/
+    /** ∞˙¡§ 3 **/
     hash_h(buf + KYBER_SYMBYTES, pk, KYBER_PUBLICKEYBYTES);
     hash_g(kr, buf, 2 * KYBER_SYMBYTES);
 
     /* coins are in kr+KYBER_SYMBYTES */
-    /** Í≥ºÏ†ï 4 **/
+    /** ∞˙¡§ 4 **/
     PQCLEAN_KYBER512_CLEAN_indcpa_enc(ct, buf, pk, kr + KYBER_SYMBYTES);
 
-    /** Í≥ºÏ†ï 5 **/
+    /** ∞˙¡§ 5 **/
     /* overwrite coins in kr with H(c) */
     hash_h(kr + KYBER_SYMBYTES, ct, KYBER_CIPHERTEXTBYTES);
     /* hash concatenation of pre-k and H(c) to k */
     kdf(ss, kr, 2 * KYBER_SYMBYTES);
 }
 
-__device__ void PQCLEAN_KYBER512_CLEAN_polyvec_decompress(polyvec* r, const uint8_t a[KYBER_POLYVECCOMPRESSEDBYTES]) {
+void PQCLEAN_KYBER512_CLEAN_polyvec_decompress(polyvec* r, const uint8_t a[KYBER_POLYVECCOMPRESSEDBYTES]) {
     unsigned int i, j, k;
 
     uint16_t t[4];
@@ -1065,7 +1064,7 @@ __device__ void PQCLEAN_KYBER512_CLEAN_polyvec_decompress(polyvec* r, const uint
     }
 }
 
-__device__ void PQCLEAN_KYBER512_CLEAN_poly_decompress(poly* r, const uint8_t a[KYBER_POLYCOMPRESSEDBYTES]) {
+void PQCLEAN_KYBER512_CLEAN_poly_decompress(poly* r, const uint8_t a[KYBER_POLYCOMPRESSEDBYTES]) {
     size_t i;
 
     for (i = 0; i < KYBER_N / 2; i++) {
@@ -1075,15 +1074,15 @@ __device__ void PQCLEAN_KYBER512_CLEAN_poly_decompress(poly* r, const uint8_t a[
     }
 }
 
-__device__ static void unpack_ciphertext(polyvec* b, poly* v, const uint8_t c[KYBER_INDCPA_BYTES]) {
+static void unpack_ciphertext(polyvec* b, poly* v, const uint8_t c[KYBER_INDCPA_BYTES]) {
     PQCLEAN_KYBER512_CLEAN_polyvec_decompress(b, c);
     PQCLEAN_KYBER512_CLEAN_poly_decompress(v, c + KYBER_POLYVECCOMPRESSEDBYTES);
 }
-__device__ static void unpack_sk(polyvec* sk, const uint8_t packedsk[KYBER_INDCPA_SECRETKEYBYTES]) {
+static void unpack_sk(polyvec* sk, const uint8_t packedsk[KYBER_INDCPA_SECRETKEYBYTES]) {
     PQCLEAN_KYBER512_CLEAN_polyvec_frombytes(sk, packedsk);
 }
 
-__device__ int PQCLEAN_KYBER512_CLEAN_verify(const uint8_t* a, const uint8_t* b, size_t len) {
+int PQCLEAN_KYBER512_CLEAN_verify(const uint8_t* a, const uint8_t* b, size_t len) {
     size_t i;
     uint8_t r = 0;
 
@@ -1094,7 +1093,7 @@ __device__ int PQCLEAN_KYBER512_CLEAN_verify(const uint8_t* a, const uint8_t* b,
     return ((~(uint64_t)r) + 1) >> 63;
 }
 
-__device__ void PQCLEAN_KYBER512_CLEAN_cmov(uint8_t* r, const uint8_t* x, size_t len, uint8_t b) {
+void PQCLEAN_KYBER512_CLEAN_cmov(uint8_t* r, const uint8_t* x, size_t len, uint8_t b) {
     size_t i;
 
     b = -b;
@@ -1102,7 +1101,7 @@ __device__ void PQCLEAN_KYBER512_CLEAN_cmov(uint8_t* r, const uint8_t* x, size_t
         r[i] ^= b & (r[i] ^ x[i]);
     }
 }
-__device__ void PQCLEAN_KYBER512_CLEAN_indcpa_dec(uint8_t m[KYBER_INDCPA_MSGBYTES], const uint8_t c[KYBER_INDCPA_BYTES], const uint8_t sk[KYBER_INDCPA_SECRETKEYBYTES])
+void PQCLEAN_KYBER512_CLEAN_indcpa_dec(uint8_t m[KYBER_INDCPA_MSGBYTES], const uint8_t c[KYBER_INDCPA_BYTES], const uint8_t sk[KYBER_INDCPA_SECRETKEYBYTES])
 {
     polyvec b, skpv;
     poly v, mp;
@@ -1119,7 +1118,7 @@ __device__ void PQCLEAN_KYBER512_CLEAN_indcpa_dec(uint8_t m[KYBER_INDCPA_MSGBYTE
 
     PQCLEAN_KYBER512_CLEAN_poly_tomsg(m, &mp);
 }
-__device__ void PQCLEAN_KYBER512_CLEAN_crypto_kem_dec(uint8_t* ss, const uint8_t* ct, const uint8_t* sk)
+void PQCLEAN_KYBER512_CLEAN_crypto_kem_dec(uint8_t* ss, const uint8_t* ct, const uint8_t* sk)
 {
     size_t i;
     int fail;
@@ -1153,252 +1152,56 @@ __device__ void PQCLEAN_KYBER512_CLEAN_crypto_kem_dec(uint8_t* ss, const uint8_t
 }
 
 
-// 1 thread - 1 Kyber
-__global__ void GPU_Kyber(uint8_t* pk, uint8_t* sk, uint8_t* ct, uint8_t* ss, uint8_t* ss2)
-{
-    int tid;
+#include <Windows.h>
 
-    tid = (blockDim.x * blockIdx.x) + threadIdx.x;
-
-    PQCLEAN_KYBER512_CLEAN_crypto_kem_keypair(pk + PQCLEAN_KYBER512_CLEAN_CRYPTO_PUBLICKEYBYTES * tid, sk + PQCLEAN_KYBER512_CLEAN_CRYPTO_SECRETKEYBYTES * tid);			// KEY ÏÉùÏÑ± + KEY ÍµêÌôò
-    PQCLEAN_KYBER512_CLEAN_crypto_kem_enc(ct + KYBER_CIPHERTEXTBYTES * tid, ss + 32 * tid, pk + PQCLEAN_KYBER512_CLEAN_CRYPTO_PUBLICKEYBYTES * tid);
-    PQCLEAN_KYBER512_CLEAN_crypto_kem_dec(ss2 + 32 * tid, ct + KYBER_CIPHERTEXTBYTES * tid, sk + PQCLEAN_KYBER512_CLEAN_CRYPTO_SECRETKEYBYTES * tid);
-}
-
-// 1 thread - 1 Keypair
-__global__ void GPU_KYBER_KEYPAIR(uint8_t* pk, uint8_t* sk)
-{
-    int tid;
-
-    tid = (blockDim.x * blockIdx.x) + threadIdx.x;
-
-    PQCLEAN_KYBER512_CLEAN_crypto_kem_keypair(pk + PQCLEAN_KYBER512_CLEAN_CRYPTO_PUBLICKEYBYTES * tid, sk + PQCLEAN_KYBER512_CLEAN_CRYPTO_SECRETKEYBYTES * tid);			// KEY ÏÉùÏÑ± + KEY ÍµêÌôò
-}
-
-// 1 thread - 1 Encapsulation
-__global__ void GPU_KYBER_ENCAPSULATION(uint8_t* pk, uint8_t* ct, uint8_t* ss)
-{
-    int tid;
-
-    tid = (blockDim.x * blockIdx.x) + threadIdx.x;
-
-    PQCLEAN_KYBER512_CLEAN_crypto_kem_enc(ct + KYBER_CIPHERTEXTBYTES * tid, ss + 32 * tid, pk + PQCLEAN_KYBER512_CLEAN_CRYPTO_PUBLICKEYBYTES * tid);
-}
-
-// 1 thread - 1 Decapsulation
-__global__ void GPU_KYBER_DECAPSULATION(uint8_t* sk, uint8_t* ct, uint8_t* ss2)
-{
-    int tid;
-
-    tid = (blockDim.x * blockIdx.x) + threadIdx.x;
-
-    PQCLEAN_KYBER512_CLEAN_crypto_kem_dec(ss2 + 32 * tid, ct + KYBER_CIPHERTEXTBYTES * tid, sk + PQCLEAN_KYBER512_CLEAN_CRYPTO_SECRETKEYBYTES * tid);
-}
-
-void test_Kyber(uint64_t blocksize, uint64_t threadsize)
-{
-    uint8_t* pk = NULL;
-    uint8_t* sk = NULL;
-    uint8_t* ct = NULL;
-    uint8_t* ss = NULL;
-    uint8_t* ss2 = NULL;
-
-    cudaEvent_t start, stop;
-    float elapsed_time_ms = 0.0f;
-    float all_elapsed_time_ms = 0.0f;
-
-    pk = (uint8_t*)malloc(PQCLEAN_KYBER512_CLEAN_CRYPTO_PUBLICKEYBYTES * blocksize * threadsize); //PQCLEAN_KYBER512_CLEAN_CRYPTO_PUBLICKEYBYTES -> (2 * 384 + 32) * blocksize * threadsize
-    sk = (uint8_t*)malloc(PQCLEAN_KYBER512_CLEAN_CRYPTO_SECRETKEYBYTES * blocksize * threadsize); //PQCLEAN_KYBER512_CLEAN_CRYPTO_SECRETKEYBYTES -> ((2 * 384) + (2 * 384 + 32) + (2 * 32)) * blocksize * threadsize
-    ct = (uint8_t*)malloc(KYBER_CIPHERTEXTBYTES * blocksize * threadsize);
-    ss = (uint8_t*)malloc(32 * blocksize * threadsize);
-    ss2 = (uint8_t*)malloc(32 * blocksize * threadsize);
-
-    uint8_t* GPU_pk;
-    uint8_t* GPU_sk;
-    uint8_t* GPU_ct;
-    uint8_t* GPU_ss;
-    uint8_t* GPU_ss2;
-
-    cudaMalloc((void**)&GPU_pk, PQCLEAN_KYBER512_CLEAN_CRYPTO_PUBLICKEYBYTES * blocksize * threadsize);
-    cudaMalloc((void**)&GPU_sk, PQCLEAN_KYBER512_CLEAN_CRYPTO_SECRETKEYBYTES * blocksize * threadsize);
-    cudaMalloc((void**)&GPU_ct, KYBER_CIPHERTEXTBYTES * blocksize * threadsize);
-    cudaMalloc((void**)&GPU_ss, 32 * blocksize * threadsize);
-    cudaMalloc((void**)&GPU_ss2, 32 * blocksize * threadsize);
-
-    printf("\n N_TIMES is %d\n", N_TIMES);
-
-    printf("\nKeypair Start...\n");
-
-    cudaEventCreate(&start);
-    cudaEventCreate(&stop);
-    cudaEventRecord(start, 0);
-
-    for (int i = 0; i < N_TIMES; i++)
-    {
-        GPU_KYBER_KEYPAIR << <blocksize, threadsize >> > (GPU_pk, GPU_sk);
-
-        cudaMemcpy(pk, GPU_pk, PQCLEAN_KYBER512_CLEAN_CRYPTO_PUBLICKEYBYTES * blocksize * threadsize, cudaMemcpyDeviceToHost);
-        cudaMemcpy(sk, GPU_sk, PQCLEAN_KYBER512_CLEAN_CRYPTO_SECRETKEYBYTES * blocksize * threadsize, cudaMemcpyDeviceToHost);
-    }
-
-    cudaEventRecord(stop, 0);
-    cudaDeviceSynchronize();
-    cudaEventSynchronize(start);
-    cudaEventSynchronize(stop);
-    cudaEventElapsedTime(&elapsed_time_ms, start, stop);
-
-    elapsed_time_ms /= N_TIMES;
-
-    printf("Keypair-elapsed time: %4.2f ms\n\n", elapsed_time_ms);
-
-    all_elapsed_time_ms += elapsed_time_ms;
-
-    elapsed_time_ms = (1000 / elapsed_time_ms) * blocksize * threadsize;
-    printf("Grid : %ld, Block : %ld, Performance : %4.2f Kyber_Keypair/s\n", blocksize, threadsize, elapsed_time_ms);
-
-    cudaMemset(GPU_pk, 0, PQCLEAN_KYBER512_CLEAN_CRYPTO_PUBLICKEYBYTES * blocksize * threadsize);
-    cudaMemset(GPU_sk, 0, PQCLEAN_KYBER512_CLEAN_CRYPTO_SECRETKEYBYTES * blocksize * threadsize);
-
-    printf("\nKeypair End...\n");
-
-    getchar();
-    getchar();
-
-    start = 0;
-    stop = 0;
-    elapsed_time_ms = 0.0;
-
-    printf("\nEncapsulation Start...\n");
-
-    cudaEventCreate(&start);
-    cudaEventCreate(&stop);
-    cudaEventRecord(start, 0);
-
-
-    for (int i = 0; i < N_TIMES; i++)
-    { 
-        cudaMemcpy(GPU_pk, pk, PQCLEAN_KYBER512_CLEAN_CRYPTO_PUBLICKEYBYTES * blocksize * threadsize, cudaMemcpyHostToDevice);
-    
-        GPU_KYBER_ENCAPSULATION << <blocksize, threadsize >> > (GPU_pk, GPU_ct, GPU_ss);
-
-        cudaMemcpy(ct, GPU_ct, KYBER_CIPHERTEXTBYTES * blocksize * threadsize, cudaMemcpyDeviceToHost);
-        cudaMemcpy(ss, GPU_ss, 32 * blocksize * threadsize, cudaMemcpyDeviceToHost);
-    }
-
-    cudaEventRecord(stop, 0);
-    cudaDeviceSynchronize();
-    cudaEventSynchronize(start);
-    cudaEventSynchronize(stop);
-    cudaEventElapsedTime(&elapsed_time_ms, start, stop);
-
-    elapsed_time_ms /= N_TIMES;
-
-    printf("Encapsulation elapsed time: %4.2f ms\n\n", elapsed_time_ms);
-
-    all_elapsed_time_ms += elapsed_time_ms;
-
-    elapsed_time_ms = (1000 / elapsed_time_ms) * blocksize * threadsize;
-    printf("Grid : %ld, Block : %ld, Performance : %4.2f Kyber_Encapsulation/s\n", blocksize, threadsize, elapsed_time_ms);
-
-    cudaMemset(GPU_ct, 0, KYBER_CIPHERTEXTBYTES * blocksize * threadsize);
-    cudaMemset(GPU_ss, 0, 32 * blocksize * threadsize);
-
-    printf("\nEncapsulation End...\n");
-
-    getchar();
-    getchar();
-
-    start = 0;
-    stop = 0;
-    elapsed_time_ms = 0.0;
-
-    printf("\nDecapsulation Start...\n");
-
-    cudaEventCreate(&start);
-    cudaEventCreate(&stop);
-    cudaEventRecord(start, 0);
-
-    for (int i = 0; i < N_TIMES; i++)
-    {
-        cudaMemcpy(GPU_ct, ct, KYBER_CIPHERTEXTBYTES * blocksize * threadsize, cudaMemcpyHostToDevice);
-        cudaMemcpy(GPU_sk, sk, PQCLEAN_KYBER512_CLEAN_CRYPTO_SECRETKEYBYTES * blocksize * threadsize, cudaMemcpyHostToDevice);
-        
-        GPU_KYBER_DECAPSULATION << <blocksize, threadsize >> > (GPU_sk, GPU_ct, GPU_ss2);
-
-        cudaMemcpy(ss2, GPU_ss2, 32 * blocksize * threadsize, cudaMemcpyDeviceToHost);
-    }
-
-    cudaEventRecord(stop, 0);
-    cudaDeviceSynchronize();
-    cudaEventSynchronize(start);
-    cudaEventSynchronize(stop);
-    cudaEventElapsedTime(&elapsed_time_ms, start, stop);
-
-    elapsed_time_ms /= N_TIMES;
-
-    printf("Decapsulation elapsed time: %4.2f ms\n\n", elapsed_time_ms);
-
-    all_elapsed_time_ms += elapsed_time_ms;
-
-    elapsed_time_ms = (1000 / elapsed_time_ms) * blocksize * threadsize;
-    printf("Grid : %ld, Block : %ld, Performance : %4.2f Kyber_Decapsulation/s\n", blocksize, threadsize, elapsed_time_ms);
-
-    printf("\nDecapsulation End...\n");
-
-    getchar();
-    getchar();
-
-    if (!memcmp(ss, ss2, 32 * blocksize * threadsize))
-        printf("\n\nSuccess!\n\n");
-    else
-        printf("\n\nFail\n\n");
-
-    printf("Kyber elapsed time: %4.2f ms\n\n", all_elapsed_time_ms);
-
-    all_elapsed_time_ms = (1000 / all_elapsed_time_ms) * blocksize * threadsize;
-    printf("Grid : %ld, Block : %ld, Performance : %4.2f Kyber/s\n", blocksize, threadsize, all_elapsed_time_ms);
-
-    getchar();
-    getchar();
-
-    //printf("ss_0: = \n");
-    //for (int i = 0; i < 32 * blocksize * threadsize; i++) {
-    //    printf("%02X ", ss[i]);
-
-    //    if ((i + 1) % 32 == 0)
-    //    {
-    //        printf("\nss_%d: = \n", (i + 1) / 32);
-    //        printf("\n");
-    //    }
-    //}
-    //printf("\n\n");
-
-    //printf("ss2_0: = \n");
-    //for (int i = 0; i < 32 * blocksize * threadsize; i++) {
-    //    printf("%02X ", ss2[i]);
-
-    //    if ((i + 1) % 32 == 0)
-    //    {
-    //        printf("\nss2_%d: = \n", (i + 1) / 32);
-    //        printf("\n");
-    //    }
-    //}
-
-    cudaFree(GPU_pk);
-    cudaFree(GPU_sk);
-    cudaFree(GPU_ct);
-    cudaFree(GPU_ss);
-    cudaFree(GPU_ss2);
-    free(pk);
-    free(sk);
-    free(ct);
-    free(ss);
-    free(ss2);
+__int64 cpucycles() {
+    return __rdtsc();
 }
 
 int main()
 {
-    test_Kyber(2048, 32);
+    int ret = 0;
+
+    uint8_t* pk = (uint8_t*)malloc(PQCLEAN_KYBER512_CLEAN_CRYPTO_PUBLICKEYBYTES);	//PQCLEAN_KYBER512_CLEAN_CRYPTO_PUBLICKEYBYTES -> 2 * 384 + 32
+
+    uint8_t* sk = (uint8_t*)malloc(PQCLEAN_KYBER512_CLEAN_CRYPTO_SECRETKEYBYTES);	//PQCLEAN_KYBER512_CLEAN_CRYPTO_SECRETKEYBYTES -> (2 * 384) + (2 * 384 + 32) + (2 * 32)
+
+    uint8_t ct[KYBER_CIPHERTEXTBYTES];												//KYBER_CIPHERTEXTBYTES						   -> (2 * 320) + 128
+    uint8_t ss[32];
+    uint8_t ss2[32];
+
+    uint64_t cycle0 = 0;
+    uint64_t cycle1 = 0;
+    uint64_t result = 0;
+
+    cycle0 = cpucycles();
+    PQCLEAN_KYBER512_CLEAN_crypto_kem_keypair(pk, sk);			// KEY ª˝º∫ + KEY ±≥»Ø
+    cycle1 = cpucycles();
+    printf("KeyGen clock size = %llu\n", cycle1 - cycle0);
+
+    cycle0 = 0;
+    cycle1 = 0;
+
+    cycle0 = cpucycles();
+    PQCLEAN_KYBER512_CLEAN_crypto_kem_enc(ct, ss, pk);			// Ciphertext, Shared Secret, Public Key
+    cycle1 = cpucycles();
+    printf("Enc clock size = %llu\n", cycle1 - cycle0);
+
+    cycle0 = 0;
+    cycle1 = 0;
+
+    cycle0 = cpucycles();
+    PQCLEAN_KYBER512_CLEAN_crypto_kem_dec(ss2, ct, sk);
+    cycle1 = cpucycles();
+    printf("Dec clock size = %llu\n", cycle1 - cycle0);
+
+    for (int i = 0; i < 32; i++) {
+        printf("%02x ", ss[i]);
+    }
+    printf("\n");
+    for (int i = 0; i < 32; i++) {
+        printf("%02x ", ss2[i]);
+    }
 
     return 0;
 }
