@@ -1151,7 +1151,6 @@ void PQCLEAN_KYBER512_CLEAN_crypto_kem_dec(uint8_t* ss, const uint8_t* ct, const
     kdf(ss, kr, 2 * KYBER_SYMBYTES);
 }
 
-
 #include <Windows.h>
 
 __int64 cpucycles() {
